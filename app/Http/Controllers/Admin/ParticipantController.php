@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Sangh;
 use App\Models\SanghParticipant;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -64,28 +65,53 @@ class ParticipantController extends Controller
         return back()->with('success', 'Participant added successfully.');
     }
 
-    public function confirm(Sangh $sangh, Request $request): RedirectResponse
+    public function lookup(Sangh $sangh, Request $request): JsonResponse
     {
         $mobile = $request->validate(['mobile' => 'required|digits:10'])['mobile'];
 
-        $participant = SanghParticipant::where('sangh_id', $sangh->id)
+        $primary = SanghParticipant::where('sangh_id', $sangh->id)
             ->where('mobile', $mobile)
+            ->whereNull('group_leader_id')
+            ->with(['groupMembers' => fn($q) => $q->orderBy('id')])
             ->first();
 
-        if (!$participant) {
-            return back()->withErrors(['mobile' => __('sangh.not_found')]);
+        if (!$primary) {
+            return response()->json(['found' => false, 'message' => __('sangh.not_found')]);
         }
 
-        if ($participant->status === 'confirmed') {
-            return back()->with('info', "Already confirmed: {$participant->name} (Token: {$participant->token})");
-        }
+        $all = collect([$primary])->merge($primary->groupMembers);
 
-        $participant->update([
-            'status'       => 'confirmed',
-            'confirmed_at' => now(),
+        return response()->json([
+            'found'        => true,
+            'participants' => $all->map(fn($p) => [
+                'id'           => $p->id,
+                'name'         => $p->name,
+                'age'          => $p->age,
+                'gender'       => $p->gender,
+                'token'        => $p->token,
+                'status'       => $p->status,
+                'is_primary'   => is_null($p->group_leader_id),
+                'confirmed_at' => $p->confirmed_at?->format('d M, H:i'),
+            ])->values(),
+        ]);
+    }
+
+    public function confirm(Sangh $sangh, Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer|exists:sangh_participants,id',
         ]);
 
-        return back()->with('success', "Confirmed: {$participant->name} — Token: {$participant->token}");
+        $count = SanghParticipant::where('sangh_id', $sangh->id)
+            ->whereIn('id', $data['ids'])
+            ->where('status', 'registered')
+            ->update([
+                'status'       => 'confirmed',
+                'confirmed_at' => now(),
+            ]);
+
+        return back()->with('success', "{$count} participant(s) confirmed.");
     }
 
     public function updateStatus(Sangh $sangh, SanghParticipant $participant, Request $request): RedirectResponse

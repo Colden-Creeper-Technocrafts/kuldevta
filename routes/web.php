@@ -34,6 +34,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     // Sangh participants
     Route::get('sangh/{sangh}/participants', [Admin\ParticipantController::class, 'index'])->name('sangh.participants');
     Route::post('sangh/{sangh}/participants', [Admin\ParticipantController::class, 'store'])->name('sangh.participants.store');
+    Route::get('sangh/{sangh}/participants/lookup', [Admin\ParticipantController::class, 'lookup'])->name('sangh.participants.lookup');
     Route::post('sangh/{sangh}/participants/confirm', [Admin\ParticipantController::class, 'confirm'])->name('sangh.participants.confirm');
     Route::patch('sangh/{sangh}/participants/{participant}', [Admin\ParticipantController::class, 'updateStatus'])->name('sangh.participants.status');
 

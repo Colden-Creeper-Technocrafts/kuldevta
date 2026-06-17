@@ -30,33 +30,63 @@ class SanghRegistrationController extends Controller
         }
 
         $data = $request->validate([
-            'name'                     => 'required|string|max:100',
-            'mobile'                   => 'required|digits:10',
-            'village'                  => 'nullable|string|max:100',
-            'city'                     => 'nullable|string|max:100',
-            'age'                      => 'nullable|integer|min:1|max:100',
-            'gender'                   => 'required|in:male,female,other',
-            'emergency_contact_name'   => 'nullable|string|max:100',
-            'emergency_contact_mobile' => 'nullable|digits:10',
-            'group_name'               => 'nullable|string|max:100',
+            // Primary member fields
+            'name'                       => 'required|string|max:100',
+            'age'                        => 'nullable|integer|min:1|max:100',
+            'gender'                     => 'required|in:male,female,other',
+            'mobile'                     => 'required|digits:10',
+            'village'                    => 'nullable|string|max:100',
+            'emergency_contact_name'     => 'nullable|string|max:100',
+            'emergency_contact_mobile'   => 'nullable|digits:10',
+            // Additional members
+            'members'                    => 'nullable|array|max:19',
+            'members.*.name'             => 'required|string|max:100',
+            'members.*.age'              => 'nullable|integer|min:1|max:100',
+            'members.*.gender'           => 'required|in:male,female,other',
+            'members.*.mobile'           => 'nullable|digits:10',
         ]);
 
-        // Find the primary (parent) registration for this mobile in this Sangh
-        $parent = SanghParticipant::where('sangh_id', $sangh->id)
-            ->where('mobile', $data['mobile'])
-            ->whereNull('group_leader_id')
-            ->first();
+        // Create the primary member
+        $primary = SanghParticipant::create([
+            'sangh_id'                 => $sangh->id,
+            'name'                     => $data['name'],
+            'mobile'                   => $data['mobile'],
+            'age'                      => $data['age'] ?? null,
+            'gender'                   => $data['gender'],
+            'village'                  => $data['village'] ?? null,
+            'emergency_contact_name'   => $data['emergency_contact_name'] ?? null,
+            'emergency_contact_mobile' => $data['emergency_contact_mobile'] ?? null,
+            'registered_by'            => 'self',
+            'status'                   => 'registered',
+            'group_leader_id'          => null,
+        ]);
 
-        $registration = SanghParticipant::create(array_merge($data, [
-            'sangh_id'        => $sangh->id,
-            'registered_by'   => 'self',
-            'status'          => 'registered',
-            'group_leader_id' => $parent?->id,
-        ]));
+        $tokens = [$primary->token];
 
-        // Pass all registrations under this mobile back to status page
+        // Create additional members
+        foreach ($data['members'] ?? [] as $member) {
+            $participant = SanghParticipant::create([
+                'sangh_id'                 => $sangh->id,
+                'name'                     => $member['name'],
+                'mobile'                   => !empty($member['mobile']) ? $member['mobile'] : $data['mobile'],
+                'age'                      => $member['age'] ?? null,
+                'gender'                   => $member['gender'],
+                'emergency_contact_name'   => $data['emergency_contact_name'] ?? null,
+                'emergency_contact_mobile' => $data['emergency_contact_mobile'] ?? null,
+                'registered_by'            => 'self',
+                'status'                   => 'registered',
+                'group_leader_id'          => $primary->id,
+            ]);
+            $tokens[] = $participant->token;
+        }
+
+        $count   = count($tokens);
+        $message = $count === 1
+            ? __('sangh.registration_success', ['token' => $tokens[0]])
+            : __('sangh.registration_success_multi', ['count' => $count, 'tokens' => implode(', ', $tokens)]);
+
         return redirect()->route('sangh.status', ['mobile' => $data['mobile']])
-            ->with('success', __('sangh.registration_success', ['token' => $registration->token]));
+            ->with('success', $message);
     }
 
     public function status(Request $request): View
@@ -69,10 +99,14 @@ class SanghRegistrationController extends Controller
         if ($request->filled('mobile') && $sangh) {
             $registrations = SanghParticipant::where('sangh_id', $sangh->id)
                 ->where('mobile', $request->mobile)
+                ->whereNull('group_leader_id')
+                ->with(['groupMembers' => fn($q) => $q->orderBy('id')])
                 ->orderBy('id')
                 ->get();
         }
 
-        return view('sangh.status', compact('registrations', 'sangh'));
+        $totalCount = $registrations->sum(fn($p) => 1 + $p->groupMembers->count());
+
+        return view('sangh.status', compact('registrations', 'totalCount', 'sangh'));
     }
 }

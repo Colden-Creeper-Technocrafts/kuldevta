@@ -20,17 +20,40 @@
             </div>
             <div class="card-body">
                 <p class="text-muted small">{{ __('sangh.confirm_hint') }}</p>
-                <form method="POST" action="{{ route('admin.sangh.participants.confirm', $sangh) }}">
-                    @csrf
-                    <div class="input-group">
-                        <input type="tel" name="mobile" class="form-control @error('mobile') is-invalid @enderror"
-                            placeholder="{{ __('app.mobile') }}" maxlength="10" required>
-                        <button class="btn btn-success" type="submit">
-                            <i class="bi bi-check2"></i> {{ __('app.confirm') }}
-                        </button>
+                <div class="input-group">
+                    <input type="tel" id="confirmMobile" class="form-control"
+                        placeholder="{{ __('app.mobile') }}" maxlength="10">
+                    <button class="btn btn-success" type="button" id="confirmLookupBtn">
+                        <i class="bi bi-search"></i> {{ __('app.check') }}
+                    </button>
+                </div>
+                <div id="confirmError" class="text-danger small mt-1 d-none"></div>
+            </div>
+        </div>
+
+        {{-- Confirm Members Modal --}}
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="confirmModalLabel">
+                            <i class="bi bi-check-circle me-2"></i>{{ __('sangh.confirm_presence') }}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    @error('mobile')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                </form>
+                    <form method="POST" action="{{ route('admin.sangh.participants.confirm', $sangh) }}">
+                        @csrf
+                        <div class="modal-body" id="confirmModalBody">
+                            {{-- Populated by JS --}}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ __('app.cancel') }}</button>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check2-all me-1"></i>{{ __('app.confirm') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -157,3 +180,84 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+const lookupUrl = '{{ route('admin.sangh.participants.lookup', $sangh) }}';
+const csrfToken = '{{ csrf_token() }}';
+
+document.getElementById('confirmLookupBtn').addEventListener('click', function () {
+    const mobile = document.getElementById('confirmMobile').value.trim();
+    const errorEl = document.getElementById('confirmError');
+    errorEl.classList.add('d-none');
+
+    if (!/^\d{10}$/.test(mobile)) {
+        errorEl.textContent = '10-digit mobile number required.';
+        errorEl.classList.remove('d-none');
+        return;
+    }
+
+    fetch(lookupUrl + '?mobile=' + encodeURIComponent(mobile), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.found) {
+            errorEl.textContent = data.message || 'Not found.';
+            errorEl.classList.remove('d-none');
+            return;
+        }
+        populateModal(data.participants);
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    })
+    .catch(() => {
+        errorEl.textContent = 'Request failed. Please try again.';
+        errorEl.classList.remove('d-none');
+    });
+});
+
+document.getElementById('confirmMobile').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('confirmLookupBtn').click();
+});
+
+function populateModal(participants) {
+    const body = document.getElementById('confirmModalBody');
+    const hasPending = participants.some(p => p.status !== 'confirmed');
+
+    if (!hasPending) {
+        body.innerHTML = '<div class="alert alert-success mb-0"><i class="bi bi-check-circle-fill me-2"></i>All members are already confirmed.</div>';
+        return;
+    }
+
+    let html = '<p class="text-muted small mb-3">Checked members will be confirmed. Uncheck to skip.</p><ul class="list-group">';
+    participants.forEach(p => {
+        const label = [
+            '<strong>' + escHtml(p.name) + '</strong>',
+            p.is_primary ? '<span class="badge bg-dark ms-1" style="font-size:.6rem">Primary</span>' : '<span class="badge bg-secondary ms-1" style="font-size:.6rem">Member</span>',
+            p.age ? p.age + 'y' : '',
+            p.gender ? p.gender : '',
+            '<code class="ms-1" style="font-size:.75rem">' + escHtml(p.token) + '</code>',
+        ].filter(Boolean).join(' ');
+
+        if (p.status === 'confirmed') {
+            html += `<li class="list-group-item d-flex align-items-center gap-2 text-success">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>${label}</span>
+                <small class="ms-auto text-muted">${p.confirmed_at ?? ''}</small>
+            </li>`;
+        } else {
+            html += `<li class="list-group-item d-flex align-items-center gap-2">
+                <input class="form-check-input mt-0" type="checkbox" name="ids[]" value="${p.id}" id="pm_${p.id}" checked>
+                <label class="form-check-label flex-grow-1" for="pm_${p.id}">${label}</label>
+            </li>`;
+        }
+    });
+    html += '</ul>';
+    body.innerHTML = html;
+}
+
+function escHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+@endpush
