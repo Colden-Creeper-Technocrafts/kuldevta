@@ -49,6 +49,7 @@ class Event extends Model
         return match($this->event_type) {
             'havan', 'monthly_havan' => 'bg-warning text-dark',
             'sangh'                  => 'bg-success',
+            'annual_function'        => 'bg-danger',
             default                  => 'bg-info text-dark',
         };
     }

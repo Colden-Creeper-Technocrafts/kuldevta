@@ -20,12 +20,13 @@ use Illuminate\Support\Carbon;
 class Sangh extends Model
 {
     protected $fillable = [
-        'event_id', 'source_en', 'source_gu', 'year', 'end_date',
+        'event_id', 'source_en', 'source_gu', 'year', 'start_date', 'end_date',
         'registration_open_from', 'registration_open_until',
         'total_distance_km', 'status',
     ];
 
     protected $casts = [
+        'start_date'              => 'date',
         'end_date'                => 'date',
         'registration_open_from'  => 'date',
         'registration_open_until' => 'date',
@@ -72,7 +73,7 @@ class Sangh extends Model
 
     public function startDate()
     {
-        return $this->event?->event_date;
+        return $this->start_date ?? $this->event?->event_date;
     }
 
     public function startTime(): string

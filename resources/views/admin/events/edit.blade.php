@@ -21,3 +21,15 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const sel = document.getElementById('eventType');
+    const hint = document.getElementById('annualFunctionHint');
+    function toggle() { hint.classList.toggle('d-none', sel.value !== 'annual_function'); }
+    sel.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
+@endpush

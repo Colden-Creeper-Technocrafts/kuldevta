@@ -33,7 +33,7 @@ class EventController extends Controller
             'title_gu'       => 'required|string|max:200',
             'description_en' => 'nullable|string',
             'description_gu' => 'nullable|string',
-            'event_type'     => 'required|in:havan,monthly_havan,sangh,special',
+            'event_type'     => 'required|in:havan,monthly_havan,sangh,annual_function,special',
             'event_date'     => 'required|date',
             'event_time'     => 'nullable',
             'venue_en'       => 'nullable|string|max:200',
@@ -46,13 +46,13 @@ class EventController extends Controller
 
         $event = Event::create($data);
 
-        if ($event->event_type === 'sangh') {
+        if (in_array($event->event_type, ['sangh', 'annual_function'])) {
             $this->createOrSyncSangh($event);
         }
 
-        $message = $event->event_type === 'sangh'
-            ? 'Sangh event created and Sangh record auto-generated.'
-            : 'Event created.';
+        $message = in_array($event->event_type, ['sangh', 'annual_function'])
+            ? __('events.sangh_auto_created')
+            : __('events.event_created');
 
         return redirect()->route('admin.events.index')->with('success', $message);
     }
@@ -69,7 +69,7 @@ class EventController extends Controller
             'title_gu'       => 'required|string|max:200',
             'description_en' => 'nullable|string',
             'description_gu' => 'nullable|string',
-            'event_type'     => 'required|in:havan,monthly_havan,sangh,special',
+            'event_type'     => 'required|in:havan,monthly_havan,sangh,annual_function,special',
             'event_date'     => 'required|date',
             'event_time'     => 'nullable',
             'venue_en'       => 'nullable|string|max:200',
@@ -82,60 +82,55 @@ class EventController extends Controller
 
         $event->update($data);
 
-        if ($event->event_type === 'sangh') {
-            // Create Sangh if not exists, otherwise sync title/dates from event
+        if (in_array($event->event_type, ['sangh', 'annual_function'])) {
             $this->createOrSyncSangh($event);
         }
 
-        return redirect()->route('admin.events.index')->with('success', 'Event updated.');
+        return redirect()->route('admin.events.index')->with('success', __('events.event_updated'));
     }
 
     public function destroy(Event $event): RedirectResponse
     {
-        // event_id on sangh is nullOnDelete, so the Sangh record stays but loses its event link
         $event->delete();
-        return redirect()->route('admin.events.index')->with('success', 'Event deleted.');
+        return redirect()->route('admin.events.index')->with('success', __('events.event_deleted'));
     }
 
     private function createOrSyncSangh(Event $event): Sangh
     {
-        $year = $event->event_date->year;
+        $eventDate = $event->event_date; // Carbon instance
+        $year      = $eventDate->year;
 
-        // If this event already has a linked Sangh, just sync it
+        // For annual_function: walk starts 2 days before, ends on event day
+        // For sangh: walk starts on event day itself
+        $isAnnual  = $event->event_type === 'annual_function';
+        $startDate = $isAnnual ? $eventDate->copy()->subDays(2) : $eventDate->copy();
+        $endDate   = $isAnnual ? $eventDate->copy() : $eventDate->copy()->addDay();
+
         if ($event->sangh) {
             $event->sangh->update([
-                'title_en'    => $event->title_en,
-                'title_gu'    => $event->title_gu,
-                'description_en' => $event->description_en,
-                'description_gu' => $event->description_gu,
-                'start_date'  => $event->event_date,
-                'start_time'  => $event->event_time ?? '05:00:00',
+                'start_date' => $startDate,
+                'end_date'   => $endDate,
             ]);
             return $event->sangh;
         }
 
-        // Check if a Sangh already exists for this year (created manually)
         $existing = Sangh::where('year', $year)->whereNull('event_id')->first();
-
         if ($existing) {
-            // Link the existing Sangh to this event
-            $existing->update(['event_id' => $event->id]);
+            $existing->update([
+                'event_id'   => $event->id,
+                'start_date' => $startDate,
+                'end_date'   => $endDate,
+            ]);
             return $existing;
         }
 
-        // Create a fresh Sangh record from the event data
         return Sangh::create([
-            'event_id'        => $event->id,
-            'year'            => $year,
-            'title_en'        => $event->title_en,
-            'title_gu'        => $event->title_gu,
-            'description_en'  => $event->description_en,
-            'description_gu'  => $event->description_gu,
-            'start_date'      => $event->event_date,
-            'end_date'        => $event->event_date->addDay(),
-            'start_time'      => $event->event_time ?? '05:00:00',
+            'event_id'          => $event->id,
+            'year'              => $year,
+            'start_date'        => $startDate,
+            'end_date'          => $endDate,
             'total_distance_km' => 35,
-            'status'          => 'draft',
+            'status'            => 'draft',
         ]);
     }
 }

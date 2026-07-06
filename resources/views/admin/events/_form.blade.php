@@ -14,14 +14,17 @@
 
     <div class="col-sm-4">
         <label class="form-label fw-semibold">{{ __('events.event_type') }} <span class="text-danger">*</span></label>
-        <select name="event_type" class="form-select @error('event_type') is-invalid @enderror" required>
-            @foreach(['havan','monthly_havan','sangh','special'] as $t)
+        <select name="event_type" class="form-select @error('event_type') is-invalid @enderror" id="eventType" required>
+            @foreach(['havan','monthly_havan','annual_function','special'] as $t)
                 <option value="{{ $t }}" {{ old('event_type', $event->event_type ?? '') == $t ? 'selected' : '' }}>
                     {{ __('events.' . $t) }}
                 </option>
             @endforeach
         </select>
         @error('event_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <div id="annualFunctionHint" class="form-text text-info d-none">
+            <i class="bi bi-info-circle me-1"></i>{{ __('events.annual_function_hint') }}
+        </div>
     </div>
     <div class="col-sm-4">
         <label class="form-label fw-semibold">{{ __('events.event_date') }} <span class="text-danger">*</span></label>
