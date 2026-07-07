@@ -3,6 +3,18 @@
 @section('page-title', __('app.edit') . ' — ' . $event->title_en)
 
 @section('content')
+
+@if($event->event_type === 'annual_function' && $event->sangh)
+<div class="d-flex gap-2 mb-3">
+    <a href="{{ route('admin.sangh.show', $event->sangh) }}" class="btn btn-sm btn-success">
+        <i class="bi bi-people-fill me-1"></i>{{ __('events.manage_sangh') }}
+    </a>
+    <a href="{{ route('admin.sangh.hawan', $event->sangh) }}" class="btn btn-sm btn-warning">
+        <i class="bi bi-fire me-1"></i>{{ __('sangh.hawan') }}
+    </a>
+</div>
+@endif
+
 <div class="row">
     <div class="col-lg-9">
         <div class="card">

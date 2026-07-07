@@ -53,11 +53,18 @@
                         </td>
                         <td>
                             <div class="d-flex gap-1 align-items-center">
-                                @if($event->event_type === 'sangh' && $event->sangh)
+                                @if(in_array($event->event_type, ['sangh', 'annual_function']) && $event->sangh)
                                     <a href="{{ route('admin.sangh.show', $event->sangh) }}"
                                        class="btn btn-sm btn-success"
                                        title="{{ __('events.manage_sangh') }}">
                                         <i class="bi bi-people-fill me-1"></i>{{ __('events.manage_sangh') }}
+                                    </a>
+                                @endif
+                                @if($event->event_type === 'annual_function' && $event->sangh)
+                                    <a href="{{ route('admin.sangh.hawan', $event->sangh) }}"
+                                       class="btn btn-sm btn-warning"
+                                       title="{{ __('sangh.hawan') }}">
+                                        <i class="bi bi-fire me-1"></i>{{ __('sangh.hawan') }}
                                     </a>
                                 @endif
                                 <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-sm btn-outline-secondary">

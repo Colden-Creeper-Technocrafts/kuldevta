@@ -25,11 +25,13 @@ class SanghParticipant extends Model
 {
     protected $table = 'sangh_participants';
 
+    public const HAWAN_ROLES = ['main', 'support_1', 'support_2', 'support_3', 'support_4'];
+
     protected $fillable = [
         'sangh_id', 'token', 'name', 'mobile', 'village', 'city', 'age', 'gender',
         'emergency_contact_name', 'emergency_contact_mobile', 'group_name',
         'is_group_leader', 'group_leader_id', 'status', 'registered_by',
-        'confirmed_at', 'notes',
+        'confirmed_at', 'notes', 'hawan_role',
     ];
 
     protected $casts = [

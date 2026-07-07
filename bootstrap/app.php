@@ -16,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
         ]);
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
+            'admin'       => \App\Http\Middleware\EnsureIsAdmin::class,
+            'participant' => \App\Http\Middleware\EnsureIsParticipant::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

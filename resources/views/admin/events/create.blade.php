@@ -25,9 +25,25 @@
 @push('scripts')
 <script>
 (function () {
-    const sel = document.getElementById('eventType');
-    const hint = document.getElementById('annualFunctionHint');
-    function toggle() { hint.classList.toggle('d-none', sel.value !== 'annual_function'); }
+    const sel     = document.getElementById('eventType');
+    const hint    = document.getElementById('annualFunctionHint');
+    const titleEn = document.querySelector('[name="title_en"]');
+    const titleGu = document.querySelector('[name="title_gu"]');
+    const venueEn = document.querySelector('[name="venue_en"]');
+    const venueGu = document.querySelector('[name="venue_gu"]');
+    const year    = {{ $nextVarshikotsavYear }};
+
+    function toggle() {
+        const isAnnual = sel.value === 'annual_function';
+        hint.classList.toggle('d-none', !isAnnual);
+        if (isAnnual) {
+            if (!titleEn.value) titleEn.value = 'Varshikotsav ' + year;
+            if (!titleGu.value) titleGu.value = 'વાર્ષિકોત્સવ ' + year;
+            if (!venueEn.value) venueEn.value = 'Kotak Kuldevta Temple, Amrapur';
+            if (!venueGu.value) venueGu.value = 'કોટક કુળદેવ મંદિર અમરાપુર';
+        }
+    }
+
     sel.addEventListener('change', toggle);
     toggle();
 })();

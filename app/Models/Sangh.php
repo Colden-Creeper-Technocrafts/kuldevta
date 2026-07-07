@@ -59,6 +59,13 @@ class Sangh extends Model
         return $this->morphMany(Sponsor::class, 'sponsorable');
     }
 
+    public function hawanAssignments(): HasMany
+    {
+        return $this->hasMany(SanghHawanAssignment::class)
+                    ->with('user')
+                    ->orderByRaw("FIELD(role, 'main','support_1','support_2','support_3','support_4')");
+    }
+
     // ── Delegated getters (read from Event) ────────────────────
 
     public function title(): string

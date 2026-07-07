@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'app_name'            => 'Kuldevta Community',
-    'temple_name'         => 'Shri Kuldevta Temple',
+    'app_name'            => 'Amrapur Dhaam',
+    'temple_name'         => 'Kotak Kuldevta Temple, Amrapur',
     'home'                => 'Home',
     'events'              => 'Events',
     'sangh'               => 'Sangh',
@@ -80,4 +80,6 @@ return [
     'user'                => 'User',
     'no_user'             => 'No linked user',
     'featured'            => 'Featured',
+    'role'                => 'Role',
+    'select'              => 'Select',
 ];

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ParticipantAuthController;
 use App\Http\Controllers\SanghRegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,16 @@ Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/sangh/register', [SanghRegistrationController::class, 'create'])->name('sangh.register');
 Route::post('/sangh/register', [SanghRegistrationController::class, 'store'])->name('sangh.register.store');
 Route::get('/sangh/status', [SanghRegistrationController::class, 'status'])->name('sangh.status');
+
+// Participant (Sangh member) login
+Route::prefix('my')->name('participant.')->group(function () {
+    Route::get('/login', [ParticipantAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [ParticipantAuthController::class, 'sendOtp'])->name('login.post');
+    Route::get('/verify', [ParticipantAuthController::class, 'showVerify'])->name('verify');
+    Route::post('/verify', [ParticipantAuthController::class, 'verifyOtp'])->name('verify.post');
+    Route::post('/logout', [ParticipantAuthController::class, 'logout'])->name('logout');
+    Route::get('/profile', [ParticipantAuthController::class, 'profile'])->middleware('participant')->name('profile');
+});
 
 // Admin auth (no middleware)
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -37,6 +48,11 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::get('sangh/{sangh}/participants/lookup', [Admin\ParticipantController::class, 'lookup'])->name('sangh.participants.lookup');
     Route::post('sangh/{sangh}/participants/confirm', [Admin\ParticipantController::class, 'confirm'])->name('sangh.participants.confirm');
     Route::patch('sangh/{sangh}/participants/{participant}', [Admin\ParticipantController::class, 'updateStatus'])->name('sangh.participants.status');
+
+    // Hawan participants
+    Route::get('sangh/{sangh}/hawan', [Admin\HawanController::class, 'index'])->name('sangh.hawan');
+    Route::post('sangh/{sangh}/hawan/assign', [Admin\HawanController::class, 'assign'])->name('sangh.hawan.assign');
+    Route::post('sangh/{sangh}/hawan/remove', [Admin\HawanController::class, 'remove'])->name('sangh.hawan.remove');
 
     // Stoppages
     Route::get('sangh/{sangh}/stoppages', [Admin\StoppageController::class, 'index'])->name('sangh.stoppages');

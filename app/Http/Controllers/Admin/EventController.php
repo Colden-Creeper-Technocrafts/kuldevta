@@ -23,7 +23,13 @@ class EventController extends Controller
 
     public function create(): View
     {
-        return view('admin.events.create');
+        $last = Event::where('event_type', 'annual_function')
+            ->orderByDesc('event_date')
+            ->first();
+
+        $nextVarshikotsavYear = $last ? $last->event_date->year + 1 : now()->year;
+
+        return view('admin.events.create', compact('nextVarshikotsavYear'));
     }
 
     public function store(Request $request): RedirectResponse
