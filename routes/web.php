@@ -76,4 +76,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     Route::get('sponsors', [Admin\SponsorController::class, 'index'])->name('sponsors.index');
     Route::post('sponsors', [Admin\SponsorController::class, 'store'])->name('sponsors.store');
     Route::delete('sponsors/{sponsor}', [Admin\SponsorController::class, 'destroy'])->name('sponsors.destroy');
+
+    // Family (Parivar)
+    Route::resource('family', Admin\FamilyController::class);
+    Route::get('family-suggest/middle-name', [Admin\FamilyController::class, 'middleNameSuggest'])->name('family.suggest.middle');
 });

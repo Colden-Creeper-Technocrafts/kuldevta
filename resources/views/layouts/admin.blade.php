@@ -55,6 +55,11 @@
     <a href="{{ route('admin.sponsors.index') }}" class="nav-link {{ request()->routeIs('admin.sponsors.*') ? 'active' : '' }}">
         <i class="bi bi-award"></i> {{ __('events.sponsors') }}
     </a>
+
+    <div class="sidebar-section">{{ __('family.parivar') }}</div>
+    <a href="{{ route('admin.family.index') }}" class="nav-link {{ request()->routeIs('admin.family.*') ? 'active' : '' }}">
+        <i class="bi bi-diagram-3"></i> {{ __('family.family') }}
+    </a>
 </div>
 
 {{-- Top Navbar --}}

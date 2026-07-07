@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'family'            => 'Family',
+    'parivar'           => 'Parivar',
+    'add_member'        => 'Add Member',
+    'edit_member'       => 'Edit Member',
+    'member_added'      => 'Family member added.',
+    'member_updated'    => 'Family member updated.',
+    'member_deleted'    => 'Family member removed.',
+    'first_name'        => 'First Name',
+    'middle_name'       => 'Middle Name',
+    'last_name'         => 'Last Name',
+    'dob'               => 'Date of Birth',
+    'suffix'            => 'Suffix',
+    'spouse'            => 'Spouse',
+    'no_spouse'         => '— No Spouse —',
+    'parent'            => 'Parent (Father / Guardian)',
+    'no_parent'         => '— Root (No Parent) —',
+    'is_daughter'       => 'Is Daughter?',
+    'is_married'        => 'Is Married?',
+    'last_name_locked'  => 'Last name is Kotak by default. Editable only for married daughters.',
+    'no_members'        => 'No family members added yet.',
+    'add_child'         => 'Add Child',
+    'delete_confirm'    => 'Remove this member? Children will become parentless.',
+    'tree'              => 'Family Tree',
+];
